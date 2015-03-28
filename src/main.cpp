@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 // If we don't ignore SIGPIPE, certain classes of connection droppage
 // will crash our program with it.
 // TODO(CaptainHayashi): a more rigorous ifndef here.
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__WIN32__) && !defined(__WIN64__)
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
