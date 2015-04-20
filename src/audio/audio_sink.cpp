@@ -213,7 +213,7 @@ void SdlAudioSink::Callback(std::uint8_t *out, int nbytes)
 	// actual read capacity can only be greater than or equal to
 	// `avail_samples`, as this is the only place where we can *decrease*
 	// it.
-	unsigned long avail_samples = this->ring_buf.ReadCapacity();
+	std::uint64_t avail_samples = this->ring_buf.ReadCapacity();
 
 	// Have we run out of things to feed?
 	if (avail_samples == 0) {
@@ -226,7 +226,7 @@ void SdlAudioSink::Callback(std::uint8_t *out, int nbytes)
 	}
 
 	// How many samples do we want to pull out of the ring buffer?
-	unsigned long req_samples = lnbytes / this->bytes_per_sample;
+	std::uint64_t req_samples = lnbytes / this->bytes_per_sample;
 
 	// How many can we pull out?  Send this amount to SDL.
 	auto samples = std::min(req_samples, avail_samples);
