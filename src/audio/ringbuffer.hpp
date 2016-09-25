@@ -9,15 +9,15 @@
 #ifndef PLAYD_RINGBUFFER_HPP
 #define PLAYD_RINGBUFFER_HPP
 
-extern "C" {
-#include "../contrib/pa_ringbuffer/pa_ringbuffer.h"
-}
-
 #include <atomic>
 #include <mutex>
 
 /**
  * A concurrent ring buffer.
+ * 
+ * This is not particularly efficient, but does the job for playd.
+ * It uses two release-acquire-atomic counters to store read and write
+ * 
  */
 class RingBuffer
 {
@@ -114,8 +114,8 @@ private:
     std::vector<uint8_t>::const_iterator r_it;  ///< The read iterator.
     std::vector<uint8_t>::iterator w_it;  ///< The write iterator.
     
-    std::atomic<size_t> r_count;  ///< The current read capacity.
-    std::atomic<size_t> w_count;  ///< The current write capacity.
+    std::atomic<size_t> count;  ///< The current read capacity.
+    // Write capacity is the total buffer capacity minus count.
 
 	std::mutex r_lock; ///< The read lock.
 	std::mutex w_lock; ///< The write lock.

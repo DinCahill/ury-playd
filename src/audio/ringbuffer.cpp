@@ -11,10 +11,6 @@
 #include <mutex>
 #include <vector>
 
-extern "C" {
-#include "../contrib/pa_ringbuffer/pa_ringbuffer.h"
-}
-
 #include "../gsl/gsl"
 #include "../errors.hpp"
 #include "../messages.h"
@@ -22,17 +18,15 @@ extern "C" {
 
 /* Assumptions:
 
-   1) single producer, single consumer.
-      - when reading, read capacity can only increase, write capacity never changes
-      - when writing, write capacity can only increase, write capacity never changes
+   1) single producer, single consumer, enforced by locks.
+      - when reading, count can only increase (read capacity can only increase)
+      - when writing, count can only decrease (write capacity can only increase)
       - only the reader can move the read pointer, and it may do so non-atomically
       - only the writer can move the write pointer, and it may do so non-atomically
    2) capacities always underestimate
-      - when reading, ATOMICALLY decrease read capacity BEFORE read (but after commit)
-                      ATOMICALLY increase write capacity AFTER read
+      - when reading, ATOMICALLY decrease count (increase read capacity) AFTER read
                       read capacity may be lower than actual
-      - when writing, ATOMICALLY decrease write capacity BEFORE write (but after commit)
-                      ATOMICALLY increase read capacity AFTER write
+      - when writing, ATOMICALLY increase count (read capacity) AFTER write
                       write capacity may be lower than actual
       - always atomically read capacities */
 
@@ -55,22 +49,21 @@ RingBuffer::~RingBuffer()
 {
 }
 
-inline size_t RingBuffer::WriteCapacity() const
-{
-	/* Acquire order here means two things:
-	 *
-	 * 1) no other loads in the thread checking WriteCapacity (ie the
-	 *    producer) can be ordered before it;
-	 * 2) this load sees all 'release' writes in other threads (usually
-	 *    consumers increasing the write capacity). 
-	 */
-	return this->w_count.load(std::memory_order_acquire);
-}
-
 inline size_t RingBuffer::ReadCapacity() const
 {
-	// See above for the memory order explanation.
-	return this->r_count.load(std::memory_order_acquire);
+	/* Acquire order here means two things:
+	*
+	* 1) no other loads in the thread checking WriteCapacity (ie the
+	*    producer) can be ordered before it;
+	* 2) this load sees all 'release' writes in other threads (usually
+	*    consumers increasing the write capacity).
+	*/
+	return this->count.load(std::memory_order_acquire);
+}
+
+inline size_t RingBuffer::WriteCapacity() const
+{
+	return this->buffer.size()/this->el_size - ReadCapacity();
 }
 
 unsigned long RingBuffer::Write(const char *start, size_t count)
@@ -92,15 +85,6 @@ unsigned long RingBuffer::Write(const char *start, size_t count)
 	if (write_capacity_estimate < count) throw InternalError("ringbuffer overflow");
 
 	auto to_write = std::min(write_capacity_estimate, count);
-
-	/* Reserve the write capacity now (it doesn't matter when we do it).
-	 *
-	 * If the consumer has increased the write count, we need to see that now,
-	 * otherwise we'll leak storage.  Thus, this action needs to ACQUIRE writes
-	 * from other threads and RELEASE the write to other threads.
-	 */
-	if (this->w_count.fetch_sub(to_write, std::memory_order_acq_rel) < to_write)
-		throw InternalError("capacity decreased unexpectedly");
 
 	/* At this stage, we're the only thread that can be accessing this part of
 	 * the buffer, so we can proceed non-atomically.  The release we do at the
@@ -126,9 +110,10 @@ unsigned long RingBuffer::Write(const char *start, size_t count)
 	/* Now tell the consumer it can read some more data (this HAS to be done here,
 	 * to avoid the consumer over-reading).
 	 * 
-	 * Again, this needs to be acquire-release.
+	 * Because the other thread might have moved count since we last checked it,
+	 * this needs to be acquire-release.
 	 */
-	this->r_count.fetch_add(to_write, std::memory_order_acq_rel);
+	this->count.fetch_add(to_write, std::memory_order_acq_rel);
 
 	Ensures(write_start_bytes + write_end_bytes == write_bytes);
 	Ensures(count >= to_write);
@@ -154,15 +139,6 @@ size_t RingBuffer::Read(char *start, size_t count)
 	if (read_capacity_estimate < count) throw InternalError("ringbuffer underflow");
 
 	auto to_read = std::min(read_capacity_estimate, count);
-
-	/* Reserve the read capacity now (it doesn't matter when we do it).
-	 *
-	 * If the producer has increased the read count, we need to see that now,
-	 * otherwise we'll leak storage.  Thus, this action needs to ACQUIRE writes
-	 * from other threads and RELEASE the write to other threads.
-	 */
-	if (this->r_count.fetch_sub(to_read, std::memory_order_acq_rel) < to_read)
-		throw InternalError("capacity decreased unexpectedly");
 
 	/* At this stage, we're the only thread that can be accessing this part of
  	 * the buffer, so we can proceed non-atomically.  The release we do at the
@@ -190,9 +166,11 @@ size_t RingBuffer::Read(char *start, size_t count)
 	/* Now tell the producer it can write some more data (this HAS to be done here,
 	 * to avoid the producer over-writing).
 	 *
-	 * Again, this needs to be acquire-release.
+	 * Because the other thread might have moved count since we last checked it,
+	 * this needs to be acquire-release.
 	 */
-	this->w_count.fetch_add(to_read, std::memory_order_acq_rel);
+	if (this->count.fetch_sub(to_read, std::memory_order_acq_rel) < to_read)
+		throw InternalError("capacity decreased unexpectedly");
 
 	Ensures(read_start_bytes + read_end_bytes == read_bytes);
 	Ensures(count >= to_read);
@@ -212,7 +190,5 @@ void RingBuffer::Flush()
 
 inline void RingBuffer::FlushInner()
 {
-	this->r_count = 0;
-	this->w_count = this->buffer.size() / this->el_size;
-	atomic_thread_fence(std::memory_order_release);
+	this->count.store(0, std::memory_order_release);
 }
