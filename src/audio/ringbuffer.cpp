@@ -7,44 +7,58 @@
  */
 
 #include <cassert>
+#include <atomic>
+#include <vector>
 
 extern "C" {
 #include "../contrib/pa_ringbuffer/pa_ringbuffer.h"
 }
 
+#include "../gsl/gsl"
 #include "../errors.hpp"
 #include "../messages.h"
 #include "ringbuffer.hpp"
+
+/* Assumptions:
+
+   1) single producer, single consumer
+      - when reading, read capacity can only increase, write capacity never changes
+      - when writing, write capacity can only increase, write capacity never changes
+      - only the reader can move the read pointer, and it may do so non-atomically
+      - only the writer can move the write pointer, and it may do so non-atomically
+   2) capacities always underestimate
+      - when reading, ATOMICALLY decrease read capacity BEFORE read (but after commit)
+                      ATOMICALLY increase write capacity AFTER read
+                      read capacity may be lower than actual
+      - when writing, ATOMICALLY decrease write capacity BEFORE write (but after commit)
+                      ATOMICALLY increase read capacity AFTER write
+                      write capacity may be lower than actual
+      - always atomically read capacities */
 
 RingBuffer::RingBuffer(int power, int size)
 {
 	if (power <= 0) throw InternalError("ringbuffer power must be positive");
 	if (size <= 0) throw InternalError("ringbuffer element size must be positive");
 
-	this->rb = new PaUtilRingBuffer;
-	this->buffer = new char[(1 << power) * size];
-
-	if (PaUtil_InitializeRingBuffer(
-	            this->rb, size, static_cast<ring_buffer_size_t>(1 << power),
-	            this->buffer) != 0) {
-		throw new InternalError(MSG_OUTPUT_RINGINIT);
-	}
-
-	assert(this->rb != nullptr);
-	assert(this->buffer != nullptr);
+    this->buffer = std::vector<std::uint8_t>((1 << power) * size);
+    this->r_it = this->buffer.cbegin();
+    this->w_it = this->buffer.begin();
+    this->el_size = size;
+    
+    // Only one thread can hold this at the moment, so we're ok to
+    // do this non-atomically.
+    this->r_count = 0;
+    this->w_count = this->buffer.size() / this->el_size;
 }
 
 RingBuffer::~RingBuffer()
 {
-	assert(this->rb != nullptr);
-	delete this->rb;
-
-	assert(this->buffer != nullptr);
-	delete[] this->buffer;
 }
 
 size_t RingBuffer::WriteCapacity() const
 {
+    return this->w_count.load()
+    
 	return CountCast(PaUtil_GetRingBufferWriteAvailable(this->rb));
 }
 

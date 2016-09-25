@@ -13,6 +13,8 @@ extern "C" {
 #include "../contrib/pa_ringbuffer/pa_ringbuffer.h"
 }
 
+#include <atomic>
+
 /**
  * A ring buffer.
  * This ring buffer is based on the PortAudio ring buffer, provided in the
@@ -108,15 +110,14 @@ public:
 	void Flush();
 
 private:
-	char *buffer;         ///< The array used by the ringbuffer.
-	PaUtilRingBuffer *rb; ///< The internal PortAudio ringbuffer.
-
-	/**
-	 * Converts a ring buffer size into an external size.
-	 * @param count The size/count in PortAudio form.
-	 * @return The size/count after casting to unsigned long.
-	 */
-	static unsigned long CountCast(ring_buffer_size_t count);
+    std::vector<uint8_t> buffer;  ///< The array used by the ringbuffer.
+    std::vector<uint8_t>::const_iterator r_it;  ///< The read iterator.
+    std::vector<uint8_t>::iterator w_it;  ///< The write iterator.
+    
+    std::atomic<size_t> r_count;  ///< The current read capacity.
+    std::atomic<size_t> w_count;  ///< The current write capacity.
+    
+    size_t el_size;  ///< TODO: remove
 };
 
 #endif // PLAYD_RINGBUFFER_HPP
