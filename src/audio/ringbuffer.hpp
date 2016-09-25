@@ -14,14 +14,10 @@ extern "C" {
 }
 
 #include <atomic>
+#include <mutex>
 
 /**
- * A ring buffer.
- * This ring buffer is based on the PortAudio ring buffer, provided in the
- * contrib/ directory.
- * This is stable and performs well, but, as it is C code, necessitates some
- * hoop jumping to integrate and could do with being replaced with a native
- * solution.
+ * A concurrent ring buffer.
  */
 class RingBuffer
 {
@@ -83,7 +79,7 @@ public:
 	 * @return The number of samples written, which should not exceed count.
 	 * @see WriteCapacity
 	 */
-	unsigned long Write(const char *start, unsigned long count);
+	unsigned long Write(const char *start, size_t count);
 
 	/**
 	 * Reads samples from the ring buffer into an array.
@@ -104,19 +100,26 @@ public:
 	 * @return The number of samples read, which should not exceed count.
 	 * @see ReadCapacity
 	 */
-	unsigned long Read(char *start, unsigned long count);
+	size_t Read(char *start, size_t count);
 
 	/// Empties the ring buffer.
 	void Flush();
 
 private:
+	/// Empties the ring buffer without acquiring locks.
+	void FlushInner();
+
     std::vector<uint8_t> buffer;  ///< The array used by the ringbuffer.
+
     std::vector<uint8_t>::const_iterator r_it;  ///< The read iterator.
     std::vector<uint8_t>::iterator w_it;  ///< The write iterator.
     
     std::atomic<size_t> r_count;  ///< The current read capacity.
     std::atomic<size_t> w_count;  ///< The current write capacity.
-    
+
+	std::mutex r_lock; ///< The read lock.
+	std::mutex w_lock; ///< The write lock.
+
     size_t el_size;  ///< TODO: remove
 };
 
