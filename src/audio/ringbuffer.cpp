@@ -116,7 +116,6 @@ unsigned long RingBuffer::Write(const char *start, size_t count)
 	this->count.fetch_add(to_write, std::memory_order_acq_rel);
 
 	Ensures(write_start_bytes + write_end_bytes == write_bytes);
-	Ensures(count >= to_write);
 	return to_write;
 }
 
@@ -173,7 +172,6 @@ size_t RingBuffer::Read(char *start, size_t count)
 		throw InternalError("capacity decreased unexpectedly");
 
 	Ensures(read_start_bytes + read_end_bytes == read_bytes);
-	Ensures(count >= to_read);
 	return to_read;
 }
 
