@@ -24,15 +24,9 @@ class RingBuffer
 public:
 	/**
 	 * Constructs a RingBuffer.
-	 *
-	 * * Precondition: 0 < power, 0 < size.
-	 * * Postcondition: The RingBuffer is fully initialised.
-	 *
-	 * @param power n, where 2^n is the number of elements in the ring
-	 *   buffer.
-	 * @param size The size of one element in the ring buffer.
+	 * @param capacity The capacity of the ringbuffer, in bytes.
 	 */
-	RingBuffer(int power, int size);
+	RingBuffer(size_t capacity);
 
 	/// Destructs a PaRingBuffer.
 	~RingBuffer();
@@ -119,8 +113,6 @@ private:
 
 	std::mutex r_lock; ///< The read lock.
 	std::mutex w_lock; ///< The write lock.
-
-    size_t el_size;  ///< TODO: remove
 };
 
 #endif // PLAYD_RINGBUFFER_HPP
