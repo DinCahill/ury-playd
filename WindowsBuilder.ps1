@@ -156,7 +156,7 @@ function BuildPlayd ($arch, $archdir, $build) {
         "x64" { $cmake_generator = "Visual Studio 14 2015 Win64"; $msbuild_platform = "x64" }
     }
     Write-Yellow "Running cmake..."
-    cmake "$project" -G "$cmake_generator" -DCMAKE_PREFIX_PATH="$archdir"
+    cmake "$project" -G "$cmake_generator" -DCMAKE_PREFIX_PATH="$archdir" -DCMAKE_INSTALL_PREFIX:PATH="$archdir/install"
     Write-Yellow "Running msbuild..."
     msbuild playd.sln /p:Configuration="Release" /toolsversion:14.0 /p:Platform="$msbuild_platform" /p:PlatformToolset=v140
     cd "$oldpwd"
