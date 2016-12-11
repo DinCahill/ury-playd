@@ -11,11 +11,15 @@
 #define PLAYD_AUDIO_SOURCE_HPP
 
 #include <cstdint>
+#include <chrono>
 #include <string>
 #include <vector>
 
 #include "../errors.hpp"
 #include "sample_formats.hpp"
+
+using namespace std::chrono;
+
 
 /**
  * An object responsible for decoding an audio file.
@@ -124,14 +128,14 @@ public:
 	 * @param micros The song position, in microseconds.
 	 * @return The corresponding number of elapsed samples.
 	 */
-	virtual std::uint64_t SamplesFromMicros(std::uint64_t micros) const;
+	virtual Samples SamplesFromMicros(microseconds micros) const;
 
 	/**
 	 * Converts an elapsed sample count to a position in microseconds.
 	 * @param samples The number of elapsed samples.
 	 * @return The corresponding song position, in microseconds.
 	 */
-	std::uint64_t MicrosFromSamples(std::uint64_t samples) const;
+	microseconds MicrosFromSamples(Samples samples) const;
 
 protected:
 	/// The file-path of this AudioSource's audio file.

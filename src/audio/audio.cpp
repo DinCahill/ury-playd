@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <climits>
 #include <cstdint>
 #include <string>
@@ -20,6 +21,9 @@
 #include "audio_sink.hpp"
 #include "audio_source.hpp"
 #include "sample_formats.hpp"
+
+using namespace std::chrono;
+
 
 //
 // NoAudio
@@ -40,12 +44,12 @@ void NoAudio::SetPlaying(bool)
 	throw NoAudioError(MSG_CMD_NEEDS_LOADED);
 }
 
-void NoAudio::SetPosition(std::uint64_t)
+void NoAudio::SetPosition(microseconds)
 {
 	throw NoAudioError(MSG_CMD_NEEDS_LOADED);
 }
 
-std::uint64_t NoAudio::Position() const
+microseconds NoAudio::Position() const
 {
 	throw NoAudioError(MSG_CMD_NEEDS_LOADED);
 }
@@ -87,7 +91,7 @@ Audio::State PipeAudio::CurrentState() const
 	return this->sink->State();
 }
 
-std::uint64_t PipeAudio::Position() const
+microseconds PipeAudio::Position() const
 {
 	assert(this->sink != nullptr);
 	assert(this->src != nullptr);
@@ -95,7 +99,7 @@ std::uint64_t PipeAudio::Position() const
 	return this->src->MicrosFromSamples(this->sink->Position());
 }
 
-void PipeAudio::SetPosition(std::uint64_t position)
+void PipeAudio::SetPosition(microseconds position)
 {
 	assert(this->sink != nullptr);
 	assert(this->src != nullptr);
