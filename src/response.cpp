@@ -48,7 +48,7 @@ std::string Response::Pack() const
 
 /* static */ Response Response::Success(const std::string &tag)
 {
-	return Response(tag, Response::Code::ACK)
+	return Response(tag, Response::Code::ack)
 	        .AddArg("OK")
 	        .AddArg("success");
 }
@@ -56,13 +56,13 @@ std::string Response::Pack() const
 /* static */ Response Response::Invalid(const std::string &tag,
                                         const std::string &msg)
 {
-	return Response(tag, Response::Code::ACK).AddArg("WHAT").AddArg(msg);
+	return Response(tag, Response::Code::ack).AddArg("WHAT").AddArg(msg);
 }
 
 /* static */ Response Response::Failure(const std::string &tag,
                                         const std::string &msg)
 {
-	return Response(tag, Response::Code::ACK).AddArg("FAIL").AddArg(msg);
+	return Response(tag, Response::Code::ack).AddArg("FAIL").AddArg(msg);
 }
 
 /* static */ std::string Response::EscapeArg(const std::string &arg)
@@ -91,10 +91,10 @@ std::string Response::Pack() const
 }
 
 //
-// ResponseSink
+// Response_sink
 //
 
-void ResponseSink::Respond(size_t, const Response &) const
+void Response_sink::Respond(size_t, const Response &) const
 {
 	// By default, do nothing.
 }
