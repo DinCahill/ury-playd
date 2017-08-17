@@ -15,13 +15,13 @@
 #include <string>
 #include <vector>
 
+#include "audio/audio.h"
 #include "audio/audio_sink.h"
 #include "audio/audio_source.h"
-#include "audio/audio.h"
 #include "errors.h"
-#include "response.h"
 #include "messages.h"
 #include "player.h"
+#include "response.h"
 
 using namespace std::chrono;
 
@@ -51,8 +51,8 @@ bool Player::Update()
 		// Since the audio is currently playing, the position may have
 		// advanced since last update.  So we need to update it.
 		auto pos = this->file->Position();
-        if (this->CanBroadcastPos(pos)) this->BroadcastPos(
-                Response::NOREQUEST, pos);
+		if (this->CanBroadcastPos(pos))
+			this->BroadcastPos(Response::NOREQUEST, pos);
 	}
 
 	return !this->dead;
@@ -113,7 +113,7 @@ Response Player::End(const std::string &tag)
 	// Rewind the file back to the start.  We can't use Player::Pos() here
 	// in case End() is called from Pos(); a seek failure could start an
 	// infinite loop.
-	this->PosRaw(Response::NOREQUEST, microseconds {0});
+	this->PosRaw(Response::NOREQUEST, microseconds{0});
 
 	return Response::Success(tag);
 }
@@ -139,7 +139,7 @@ Response Player::Load(const std::string &tag, const std::string &path)
 	}
 
 	assert(this->file != nullptr);
-	this->last_pos = seconds {0};
+	this->last_pos = seconds{0};
 
 	// A load will change all of the player's state in one go,
 	// so just send a Dump() instead of writing out all of the responses
@@ -155,7 +155,7 @@ Response Player::Pos(const std::string &tag, const std::string &pos_str)
 {
 	if (this->dead) return Response::Failure(tag, MSG_CMD_PLAYER_CLOSING);
 
-	microseconds pos {0};
+	microseconds pos{0};
 	try {
 		pos = PosParse(pos_str);
 	} catch (Seek_error &e) {
@@ -231,7 +231,6 @@ Response Player::Quit(const std::string &tag)
 		throw Seek_error(MSG_SEEK_INVALID_VALUE);
 	}
 
-
 	std::uint64_t pos;
 	try {
 		pos = std::stoull(pos_str, &cpos);
@@ -245,7 +244,7 @@ Response Player::Quit(const std::string &tag)
 	auto sl = pos_str.length();
 	if (cpos != sl) throw Seek_error(MSG_SEEK_INVALID_VALUE);
 
-	return microseconds {pos};
+	return microseconds{pos};
 }
 
 void Player::PosRaw(const std::string &tag, microseconds pos)
@@ -286,11 +285,10 @@ void Player::Respond(int id, Response rs) const
 	if (this->io != nullptr) this->io->Respond(id, rs);
 }
 
-void Player::AnnouncePos(int id, const std::string &tag,
-			 microseconds pos) const
+void Player::AnnouncePos(int id, const std::string &tag, microseconds pos) const
 {
 	this->Respond(id, Response(tag, Response::Code::pos)
-		                  .AddArg(std::to_string(pos.count())));
+	                          .AddArg(std::to_string(pos.count())));
 }
 
 bool Player::CanBroadcastPos(microseconds pos) const
