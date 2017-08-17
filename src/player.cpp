@@ -51,7 +51,8 @@ bool Player::Update()
 		// Since the audio is currently playing, the position may have
 		// advanced since last update.  So we need to update it.
 		auto pos = this->file->Position();
-		if (this->CanBroadcastPos(pos)) this->BroadcastPos(pos);
+        if (this->CanBroadcastPos(pos)) this->BroadcastPos(
+                Response::NOREQUEST, pos);
 	}
 
 	return !this->dead;
@@ -249,9 +250,10 @@ Response Player::Quit(const std::string &tag)
 
 void Player::PosRaw(const std::string &tag, microseconds pos)
 {
-	assert(this->file != nullptr);
+	Expects(this->file != nullptr);
+
 	this->file->SetPosition(pos);
-	this->BroadcastPos(pos);
+	this->BroadcastPos(tag, pos);
 }
 
 void Player::DumpState(size_t id, const std::string &tag) const
@@ -299,12 +301,12 @@ bool Player::CanBroadcastPos(microseconds pos) const
 	return this->last_pos < duration_cast<seconds>(pos);
 }
 
-void Player::BroadcastPos(microseconds pos)
+void Player::BroadcastPos(const std::string &tag, microseconds pos)
 {
 	// This ensures we don't broadcast too often:
 	// see CanBroadcastPos.
 	this->last_pos = duration_cast<seconds>(pos);
-	this->AnnouncePos(0, Response::NOREQUEST, pos);
+	this->AnnouncePos(0, tag, pos);
 }
 
 std::unique_ptr<Audio> Player::LoadRaw(const std::string &path) const
