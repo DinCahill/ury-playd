@@ -9,13 +9,22 @@ before_install:
 
 install:
   - if [ "${COMPILER}" == "g++" ]; then sudo apt-get install -qq g++-${COMPILER_VERSION} && export CC=gcc-${COMPILER_VERSION} CXX=g++-${COMPILER_VERSION}; fi
+
   - |
     if [ "${COMPILER}" == "clang" ]; then
-      echo "Searching for cxxabi.h..."; cxxabi="$(dirname $(find /usr/local/clang* -name cxxabi.h) 2>/dev/null)" && echo "cxxabi.h directory: $cxxabi" || (>&2 echo "Could not find cxxapi.h!" && exit 1)
-      echo "Searching for libc++abi.so..."; libcxxabi="$(dirname $(find /usr/local/clang* -name libc++abi.so) 2>/dev/null)" && echo "libc++abi directory: $libcxxabi" || (>&2 echo "Could not find libc++abi.so!" && exit 1)
-      sudo apt-get install --allow-unauthenticated -qq clang-${COMPILER_VERSION} libc++-dev &&
-      export CC=clang-${COMPILER_VERSION} CXX=clang++-${COMPILER_VERSION} CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -I${cxxabi}" LDFLAGS="${LDFLAGS} -stdlib=libc++ -lc++abi -L${libcxxabi}"
+      sudo apt-get install --allow-unauthenticated -qq clang-${COMPILER_VERSION} &&
+      export CC=clang-${COMPILER_VERSION} CXX=clang++-${COMPILER_VERSION}
     fi
+  - if [ "${COMPILER}" == "clang" ]; then export CXXFLAGS="-stdlib=libc++" && export LDFLAGS="-stdlib=libc++"; fi
+  - if [ "${COMPILER}" == "clang" ]; then svn co --quiet $LIBCXXURL libcxx && pushd libcxx/lib && bash buildit && sudo cp ./libc++.so.1.0 /usr/lib/; fi
+  - if [ "${COMPILER}" == "clang" ]; then sudo mkdir /usr/include/c++/v1 && pushd .. && sudo cp -r include/* /usr/include/c++/v1/; fi
+  - if [ "${COMPILER}" == "clang" ]; then pushd /usr/lib && sudo ln -sf libc++.so.1.0 libc++.so; fi
+  - if [ "${COMPILER}" == "clang" ]; then sudo ln -sf libc++.so.1.0 libc++.so.1 && popd && popd && popd; fi
+  - if [ "${COMPILER}" == "clang" ]; then svn co --quiet $LIBCXXABIURL libcxxabi && pushd libcxxabi/lib && bash buildit && sudo cp ./libc++abi.so.1.0 /usr/lib/; fi
+  - if [ "${COMPILER}" == "clang" ]; then pushd .. && sudo cp -r include/* /usr/include/c++/v1; fi
+  - if [ "${COMPILER}" == "clang" ]; then pushd /usr/lib && sudo ln -sf libc++abi.so.1.0 libc++abi.so; fi
+  - if [ "${COMPILER}" == "clang" ]; then sudo ln -sf libc++abi.so.1.0 libc++abi.so.1 && popd && popd && popd; fi
+
   - if [ "$USE_CMAKE" = "TRUE" ]; then sudo apt-get install -qq cmake; fi
 
   - sudo apt-get install -y libmpg123-dev libsndfile-dev libsdl2-dev
@@ -36,6 +45,4 @@ after_success:
 matrix:
   include:
     - compiler: clang
-      env: COMPILER=clang COMPILER_VERSION=3.8 USE_CMAKE=TRUE
-    - compiler: clang
-      env: COMPILER=clang COMPILER_VERSION=3.9 USE_CMAKE=TRUE
+      env: COMPILER=clang COMPILER_VERSION=3.8 LIBCXXURL=http://llvm.org/svn/llvm-project/libcxx/tags/RELEASE_380/final/ LIBCXXABIURL=http://llvm.org/svn/llvm-project/libcxxabi/tags/RELEASE_380/final/ USE_CMAKE=TRUE
