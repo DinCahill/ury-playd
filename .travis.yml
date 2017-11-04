@@ -13,6 +13,8 @@ install:
   - |
     if [ "${COMPILER}" == "clang" ]; then
       sudo apt-get install --allow-unauthenticated -qq clang-${COMPILER_VERSION} &&
+      dpkg -l | grep libstdc++
+      sudo apt-get purge -y libstdc++6 libstdc++-5-dev
       export CC=clang-${COMPILER_VERSION} CXX=clang++-${COMPILER_VERSION}
     fi
   - if [ "${COMPILER}" == "clang" ]; then export CXXFLAGS="-stdlib=libc++" && export LDFLAGS="-stdlib=libc++"; fi
