@@ -24,6 +24,7 @@ install:
   - if [ "${COMPILER}" == "clang" ]; then pushd .. && sudo cp -r include/* /usr/include/c++/v1; fi
   - if [ "${COMPILER}" == "clang" ]; then pushd /usr/lib && sudo ln -sf libc++abi.so.1.0 libc++abi.so; fi
   - if [ "${COMPILER}" == "clang" ]; then sudo ln -sf libc++abi.so.1.0 libc++abi.so.1 && popd && popd && popd; fi
+  - if [ "${COMPILER}" == "clang" ]; then export LDFLAGS="${LDFLAGS} -lc++abi"; fi
 
   - if [ "$USE_CMAKE" = "TRUE" ]; then sudo apt-get install -qq cmake; fi
 
