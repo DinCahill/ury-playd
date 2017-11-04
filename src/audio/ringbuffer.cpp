@@ -49,23 +49,6 @@ Ring_buffer::~Ring_buffer()
 {
 }
 
-inline size_t Ring_buffer::ReadCapacity() const
-{
-	/* Acquire order here means two things:
-	 *
-	 * 1) no other loads in the thread checking WriteCapacity (ie the
-	 *    producer) can be ordered before it;
-	 * 2) this load sees all 'release' writes in other threads (usually
-	 *    consumers increasing the write capacity).
-	 */
-	return this->count.load(std::memory_order_acquire);
-}
-
-inline size_t Ring_buffer::WriteCapacity() const
-{
-	return this->buffer.size() - ReadCapacity();
-}
-
 size_t Ring_buffer::Write(const gsl::span<const uint8_t> src)
 {
 	// This shouldn't be called with an empty (or backwards!) span.

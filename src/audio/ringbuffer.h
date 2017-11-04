@@ -44,14 +44,27 @@ public:
 	 * @return The number of samples this ring buffer has space to store.
 	 * @see Write
 	 */
-	size_t WriteCapacity() const;
+	inline size_t WriteCapacity() const
+	{
+		return this->buffer.size() - ReadCapacity();
+	}
 
 	/**
 	 * The current read capacity.
 	 * @return The number of samples available in this ring buffer.
 	 * @see Read
 	 */
-	size_t ReadCapacity() const;
+	inline size_t ReadCapacity() const
+	{
+		/* Acquire order here means two things:
+		*
+		* 1) no other loads in the thread checking WriteCapacity (ie the
+		*    producer) can be ordered before it;
+		* 2) this load sees all 'release' writes in other threads (usually
+		*    consumers increasing the write capacity).
+		*/
+		return this->count.load(std::memory_order_acquire);
+	}
 
 	/**
 	 * Writes samples from a span into the ring buffer.
