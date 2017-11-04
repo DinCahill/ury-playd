@@ -137,7 +137,7 @@ function BuildDeps ($arch, $downloads, $libdir, $includedir, $build) {
     git clone "$url_libuv"
     Write-Yellow "Compiling libuv..."
     cd "libuv"
-    cmd /c "vcbuild.bat" "$arch" "release" "shared"
+    cmd /c "vcbuild.bat" "$arch" "release" "shared" "vs2017"
     cp "Release/*.lib" "$libdir/"
     cp "include/*" "$includedir/"
     cp "Release/*.dll" "$releasedir/"
@@ -152,21 +152,21 @@ function BuildPlayd ($arch, $archdir, $build) {
     cd "$build"
 
     switch ($arch) {
-        "x86" { $cmake_generator = "Visual Studio 14 2015"; $msbuild_platform = "Win32" }
-        "x64" { $cmake_generator = "Visual Studio 14 2015 Win64"; $msbuild_platform = "x64" }
+        "x86" { $cmake_generator = "Visual Studio 15 2017"; $msbuild_platform = "Win32" }
+        "x64" { $cmake_generator = "Visual Studio 15 2017 Win64"; $msbuild_platform = "x64" }
     }
     Write-Yellow "Running cmake..."
     cmake "$project" -G "$cmake_generator" -DCMAKE_PREFIX_PATH="$archdir"
     Write-Yellow "Running msbuild..."
-    msbuild playd.sln /p:Configuration="Release" /toolsversion:14.0 /p:Platform="$msbuild_platform" /p:PlatformToolset=v140
+    msbuild playd.sln /p:Configuration="Release" /p:Platform="$msbuild_platform"
     cd "$oldpwd"
 }
 
 
 function Load-MSVC-Vars {
     #Set environment variables for Visual Studio Command Prompt
-    pushd "$env:VS140COMNTOOLS"
-    cmd /c "vsvars32.bat&set" |
+    pushd "$env:VS150COMNTOOLS"
+    cmd /c "VsDevCmd.bat&set" |
     ForEach-Object {
         if ($_ -match "=") {
             $v = $_.split("="); Set-Item -Force -Path "ENV:\$($v[0])" -Value "$($v[1])"
