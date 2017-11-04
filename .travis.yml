@@ -29,16 +29,7 @@ after_success:
 
 matrix:
   include:
-    - compiler: gcc
-      env: COMPILER=g++ COMPILER_VERSION=5 USE_CMAKE=TRUE
-    - compiler: gcc
-      env: COMPILER=g++ COMPILER_VERSION=4.9 USE_CMAKE=TRUE
-
-    - compiler: clang
-      env: COMPILER=clang COMPILER_VERSION=3.6 USE_CMAKE=TRUE
-    - compiler: clang
-      env: COMPILER=clang COMPILER_VERSION=3.7 USE_CMAKE=TRUE
     - compiler: clang
       env: COMPILER=clang COMPILER_VERSION=3.8 USE_CMAKE=TRUE
     - compiler: clang
-      env: COMPILER=clang COMPILER_VERSION=3.8 USE_CMAKE=FALSE
+      env: COMPILER=clang COMPILER_VERSION=3.9 USE_CMAKE=TRUE
