@@ -9,7 +9,7 @@ before_install:
 
 install:
   - if [ "${COMPILER}" == "g++" ]; then sudo apt-get install -qq g++-${COMPILER_VERSION} && export CC=gcc-${COMPILER_VERSION} CXX=g++-${COMPILER_VERSION}; fi
-  - if [ "${COMPILER}" == "clang" ]; then sudo apt-get install --allow-unauthenticated -qq clang-${COMPILER_VERSION} libc++-dev && export CC=clang-${COMPILER_VERSION} CXX=clang++-${COMPILER_VERSION} CXXFLAGS="${CXXFLAGS} -stdlib=libc++"; fi
+  - if [ "${COMPILER}" == "clang" ]; then sudo apt-get install --allow-unauthenticated -qq clang-${COMPILER_VERSION} libc++-dev libc++-abi-dev && export CC=clang-${COMPILER_VERSION} CXX=clang++-${COMPILER_VERSION} CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -lc++abi"; fi
   - if [ "$USE_CMAKE" = "TRUE" ]; then sudo apt-get install -qq cmake; fi
 
   - sudo apt-get install -y libmpg123-dev libsndfile-dev libsdl2-dev
