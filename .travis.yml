@@ -11,10 +11,10 @@ install:
   - if [ "${COMPILER}" == "g++" ]; then sudo apt-get install -qq g++-${COMPILER_VERSION} && export CC=gcc-${COMPILER_VERSION} CXX=g++-${COMPILER_VERSION}; fi
   - |
     if [ "${COMPILER}" == "clang" ]; then
-      echo "Searching for cxxabi..."; find /usr | grep 'cxxabi\|c++abi'
-      echo "Searching for libc++abi.so..."; libcxxabi="$(dirname $(find /usr/local -name libc++abi.so) 2>/dev/null)" && echo "libc++abi directory: $libcxxabi" || (>&2 echo "Could not find libc++!" && exit 1)
+      echo "Searching for cxxabi.h..."; cxxabi="$(dirname $(find /usr/local/clang* -name cxxabi.h) 2>/dev/null)" && echo "cxxabi.h directory: $cxxabi" || (>&2 echo "Could not find cxxapi.h!" && exit 1)
+      echo "Searching for libc++abi.so..."; libcxxabi="$(dirname $(find /usr/local/clang* -name libc++abi.so) 2>/dev/null)" && echo "libc++abi directory: $libcxxabi" || (>&2 echo "Could not find libc++abi.so!" && exit 1)
       sudo apt-get install --allow-unauthenticated -qq clang-${COMPILER_VERSION} libc++-dev &&
-      export CC=clang-${COMPILER_VERSION} CXX=clang++-${COMPILER_VERSION} CXXFLAGS="${CXXFLAGS} -stdlib=libc++" LDFLAGS="${LDFLAGS} -stdlib=libc++ -lc++abi -L${libcxxabi}"
+      export CC=clang-${COMPILER_VERSION} CXX=clang++-${COMPILER_VERSION} CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -I${cxxabi}" LDFLAGS="${LDFLAGS} -stdlib=libc++ -lc++abi -L${libcxxabi}"
     fi
   - if [ "$USE_CMAKE" = "TRUE" ]; then sudo apt-get install -qq cmake; fi
 
