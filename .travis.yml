@@ -50,3 +50,4 @@ deploy:
   on:
     tags: true
     branch: travis-deb
+    compiler: clang
