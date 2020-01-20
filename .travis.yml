@@ -23,6 +23,8 @@ matrix:
     # standard Bionic clang ('just works' with libstdc++-8)
     - os: linux
       compiler: clang
+      env:
+        - ENABLE_DEPLOY="1"
     # gcc 8 (at time of writing, Bionic gcc won't work for weird C++17 reasons)
     - os: linux
       compiler: gcc
@@ -50,4 +52,4 @@ deploy:
   on:
     tags: true
     branch: travis-deb
-    compiler: clang
+    condition: "$ENABLE_DEPLOY = 1"
