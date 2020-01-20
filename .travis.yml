@@ -44,7 +44,7 @@ deploy:
   api_key:
     secure: kLVo3s7iyqT2mjaVJYXZ0XlulNKeC80zWOdsARGO03B/2uICXxHzvKm9erY2XvS3hqdPSAqw8Vt7apCcoI6ceaWvO1mg6anxwckmrb9pcdAO7MsyS7BvP/NUKAivL1af9uS1ndazx1bp+z8Bpk80XpzZ62yN7BB8uEtl33jcsgE=
   file_glob: true
-  file: *.deb
+  file: "*.deb"
   skip_cleanup: true
   draft: true
   on:
