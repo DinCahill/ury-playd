@@ -8,7 +8,7 @@ endif()
 
 # Set project version string
 if (DEFINED PROGVER)
-  string (REGEX REPLACE "^v([0-9]+)\.([0-9]+)\.([0-9]+)-([0-9]+)-(.*)" "\\1;\\2;\\3;\\4" _versionComponents "${PROGVER}")
+  string (REGEX REPLACE "^v([0-9]+)\.([0-9]+)\.([0-9]+)" "\\1;\\2;\\3" _versionComponents "${PROGVER}")
   list (LENGTH _versionComponents _len)
   if (${_len} GREATER 0)
     list(GET _versionComponents 0 V_MAJOR)
